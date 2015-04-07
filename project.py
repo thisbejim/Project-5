@@ -9,6 +9,8 @@ import json
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
+import datetime
+from flask_oauthlib.client import OAuth
 
 # App Config
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -31,6 +33,32 @@ app.config['GITHUB_CLIENT_SECRET'] = 'ea735a886f5676eb727dd7f8deb64a444997eb7d'
 cloudinary.config(cloud_name="hdriydpma", api_key="936542698847873", api_secret="URri2QHl0U8e-Q2whUjpqj7I4f8")
 
 github = GitHub(app)
+
+#OAuth
+oauth = OAuth(app)
+
+#Twitter
+twitter = oauth.remote_app(
+    'twitter',
+    consumer_key='9JTAk71PnJSxpPOWMz2vrHhWI',
+    consumer_secret='n1HPcrUAWeCNJzB2CUkc4j3HaakEEpSIhNKZTxX5QkOBp8R8Id',
+    base_url='https://api.twitter.com/1.1/',
+    request_token_url='https://api.twitter.com/oauth/request_token',
+    access_token_url='https://api.twitter.com/oauth/access_token',
+    authorize_url='https://api.twitter.com/oauth/authenticate',
+)
+
+#Facebook
+facebook = oauth.remote_app(
+    'facebook',
+    consumer_key='1463359790551415',
+    consumer_secret='99ac53adda03bf6b5aba0c56a0f12bfa',
+    request_token_params={'scope': 'email'},
+    base_url='https://graph.facebook.com',
+    request_token_url=None,
+    access_token_url='/oauth/access_token',
+    authorize_url='https://www.facebook.com/dialog/oauth'
+)
 
 # Import crud
 from sqlalchemy import create_engine
@@ -270,6 +298,80 @@ def authorized(oauth_token):
     session['user_id'] = user.id
     flash("Logged In", "success")
     return redirect(url_for('courses'))
+  
+#Twitter Auth
+
+@app.route('/twitter')
+def twitterAuth():
+    callback_url = url_for('oauthorized')
+    return twitter.authorize(callback=callback_url)
+
+@twitter.tokengetter
+def get_twitter_token():
+    if 'twitter_oauth' in session:
+        resp = session['twitter_oauth']
+        return resp['oauth_token'], resp['oauth_token_secret']
+
+@app.route('/oauthorized')
+def oauthorized():
+    resp = twitter.authorized_response()
+
+    if resp is None:
+        flash("Authentication Failed", "danger")
+        return redirect(url_for('assets'))
+
+    session['twitter_oauth'] = resp
+    thisuser = str(resp['user_id'])
+    user = db.query(User).filter_by(twitter_id=thisuser).first()
+
+    if user is None:
+        yes = twitter.request('https://api.twitter.com/1.1/users/show.json?screen_name='+resp['screen_name'])
+        photoUrl = yes.data['profile_image_url_https']
+        referb = photoUrl.replace("_normal", "")
+        user = User(twitter_id=thisuser, username=resp['screen_name'],
+                    profile_pic=referb)
+        db.add(user)
+        db.commit()
+
+    session['user_id'] = user.id
+    flash("Logged In", "success")
+    return redirect(url_for('assets'))
+
+#Facebook Auth
+
+@app.route('/facebook')
+def facebookAuth():
+    callback_url = url_for(
+        'facebook_authorized',
+        next=request.args.get('next') or request.referrer or None,
+        _external=True)
+
+    return facebook.authorize(callback=callback_url)
+
+@facebook.tokengetter
+def get_facebook_oauth_token():
+    return session.get('oauth_token')
+
+@app.route('/facebook_authorized')
+def facebook_authorized():
+    resp = facebook.authorized_response()
+    if resp is None:
+        flash("Authentication Failed", "danger")
+        return redirect(url_for('assets'))
+
+    payload = {'access_token': resp['access_token']}
+    r = requests.get('https://graph.facebook.com/me', params=payload)
+    info = json.loads(r.text)
+    user = db.query(User).filter_by(facebook_id=info['id']).first()
+    if user is None:
+        user = User(facebook_id=info['id'], username=info['name'],
+                    profile_pic='https://graph.facebook.com/'+info['id']+'/picture?type=large')
+        db.add(user)
+        db.commit()
+
+    session['user_id'] = user.id
+    flash("Logged In", "success")
+    return redirect(url_for('assets'))
 
 # Profile page, redirect if not authenticated
 @app.route('/profile')
