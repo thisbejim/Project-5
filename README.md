@@ -21,7 +21,3 @@ pip install -r requirements.txt
 python project.py
 
 Open http://localhost:5000/
-
-## Heroku
-
-You can try this app at http://mentor-app.herokuapp.com/
