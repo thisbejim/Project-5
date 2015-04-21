@@ -49,6 +49,13 @@ execfile(activate_this, dict(__file__=activate_this))
 
 I was very grateful to find this little snippet as this particular problem was really stalling my progress.
 
+The catalog app had previously been setup to work with sqlite so I had to change the engine creation to use postgresql and access the app database with a new postgres role I had created earlier. 
+
+While most everything for the app had been installed correctly using pip install -r requirements.txt in virtualenv, I kept getting a missing package error for psycopg2. I tried to pip install it directly, but in the end I had to use sudo apt-get install python-psycopg2 to get psycopg2 to install properly.
+
+I got stumped trying to edit my postgres pg_hba.conf file for quite a silly reason, I had been using sudo nano /etc/postgresql/9.1/main/pg_hba.conf when my postgres version was actually 9.3 not 9.1. psql --version gave me this answer.
+
+
 
 
 
