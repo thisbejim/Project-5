@@ -2,7 +2,7 @@
 
 ## Test
 
-The hosted catalog project is [here](http://54.191.27.210/)
+The hosted catalog project is [here](http://54.149.31.80/)
 
 ## Process
 
@@ -20,6 +20,9 @@ http://ubuntuforums.org/showthread.php?t=1096398
 http://ubuntuforums.org/showthread.php?t=1739013
 https://help.ubuntu.com/community/UFW
 http://www.howtogeek.com/115116/how-to-configure-ubuntus-built-in-firewall/
+
+SSH:
+https://www.digitalocean.com/community/tutorials/initial-server-setup-with-ubuntu-14-04
 
 Timezone:
 http://askubuntu.com/questions/138423/how-do-i-change-my-timezone-to-utc-gmt
@@ -41,19 +44,9 @@ http://askubuntu.com/questions/410244/a-command-to-list-all-users-and-how-to-add
 http://askubuntu.com/questions/136788/how-do-i-list-the-members-of-a-group
 http://stackoverflow.com/questions/11919391/postgresql-error-fatal-role-username-does-not-exist
 
-The most challenging part was creating a new postgres user/password to use to access the catalog app database, simply because I found the default postgress user/role confusing at first. Setting up the flask app in general was a challenge and because I used virtualenv the .wsgi could not find my app's supporting libraries. Someone had a great fix for this:
-
-activate_this = '/var/www/mentor/venv/bin/activate_this.py'
-
-execfile(activate_this, dict(__file__=activate_this))
-
-I was very grateful to find this little snippet as this particular problem was really stalling my progress.
-
-The catalog app had previously been setup to work with sqlite so I had to change the engine creation to use postgresql and access the app database with a new postgres role I had created earlier. 
-
-While most everything for the app had been installed correctly using pip install -r requirements.txt in virtualenv, I kept getting a missing package error for psycopg2. I tried to pip install it directly, but in the end I had to use sudo apt-get install python-psycopg2 to get psycopg2 to install properly.
-
-I got stumped trying to edit my postgres pg_hba.conf file because I had been using sudo nano /etc/postgresql/9.1/main/pg_hba.conf when my postgres version was actually 9.3 not 9.1. psql --version gave me this answer.
+## SSH
+After the private key is placed in the -i ~/.ssh/id_rsa directory, you can access the server with -
+ssh -i ~/.ssh/id_rsa -p 2200 grader@54.149.31.80
 
 
 
